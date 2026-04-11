@@ -39,7 +39,7 @@ Pn = kn * Pq #ESTO DEBERIA SER LA VARIANZA
 SNR = Ps/Pn
 SNR_db = 10*np.log10(SNR + 1e-15)
 
-print(Ps)
+print(q/2)
 
 
 
@@ -68,12 +68,25 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-#%%
-# Hitograma de  error de cuantizacion
-plt.hist(Error_q, bins=10, density= 'true', color='purple', alpha=0.4,
+#%% Hitoggrama del error de cuantizacion
+plt.hist(Error_q, bins=10, density=True, color='purple', alpha=0.4,
          edgecolor='black')
-plt.axhline(np.mean(Error_q) ,color = 'C14',label = f"Media del error = {np.mean(Error_q)}",
+
+# Media (esto sí es horizontal si querés verlo como densidad, pero suele no tener mucho sentido)
+# mejor marcarla vertical también:
+plt.axhline(1/q, color='C4',
+            label=f"Altura teórica = {1/q:.3f}",
             linestyle='--', linewidth=2)
+
+# Límites teóricos del error de cuantización
+plt.axvline(q/2, color='m',
+            label=f"+q/2 = {q/2:.3f}",
+            linestyle='--', linewidth=2)
+
+plt.axvline(-q/2, color='m',
+            label=f"-q/2 = {-q/2:.3f}",
+            linestyle='--', linewidth=2)
+
 plt.grid(True)
 plt.legend()
 plt.show()
