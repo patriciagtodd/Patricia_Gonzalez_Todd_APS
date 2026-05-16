@@ -43,12 +43,10 @@ matriz_f = np.tile(f1, (N,1))
 matriz_S = a0 * np.sin(2*np.pi* matriz_f *matriz_n) # esto es una matriz de N muestras por R de
 
 
-r = mi_funcion_ruido(matriz_n, Pr)
+r = mi_funcion_ruido((N,R), Pr)
 
 
 matriz_Sr = matriz_S + r
-
-
 
 # %% SIN VENTANA
 
@@ -70,12 +68,6 @@ pot_x1_db = 10*np.log10(pot_x1[:N//2] + 1e-12) #db
 ffreq = np.arange(0, N)*deltaf
 
 
-plt.plot(pot_x1_db) 
-
-plt.xlim(0, fs/2)
-plt.legend()
-plt.grid(0.01)
-plt.show()
 '''HASTA ACA SE QUE ESTOY ENTRE -2 Y 2'''
 
 
@@ -98,19 +90,8 @@ pot_x2_db = 10*np.log10(pot_x2[:N//2] + 1e-12) #db
 
 ffreq = np.arange(0, N)*deltaf
 
-# Gráfico SOLO DEL DELTA
-#plt.figure(figsize=(10, 10))
-plt.plot(pot_x2_db) 
 
-# línea vertical en x = 3
-
-plt.xlim(0, fs/2)
-plt.legend()
-plt.grid(0.01)
-plt.show()
 '''HASTA ACA SE QUE ESTOY ENTRE -2 Y 2'''
-
-
 
 # %% VENTANA Blackmanharris
 
@@ -131,19 +112,99 @@ pot_x3_db = 10*np.log10(pot_x3[:N//2] + 1e-12) #db
 
 ffreq = np.arange(0, N)*deltaf
 
-# Gráfico SOLO DEL DELTA
-#plt.figure(figsize=(10, 10))
-plt.plot(pot_x3_db) 
+# %% VENTANA Hann
 
-# línea vertical en x = 3
+w4 = windows.hann(N)
+w4 = w4.reshape(N,1)
+w4 = np.tile(w4, (1,R))
 
-plt.xlim(0, fs/2)
-plt.legend()
-plt.grid(0.01)
+x4 = np.fft.fft((matriz_Sr*w4),n=N,axis=0)/(N)  # normalizada con las muestras
+
+mag_x4 = np.abs(x4[:N//2, :]) * 2 # Espectro unilateral corregido
+
+#n y axis lo que hacen es decirle en que direccion y como es cada grupo que quiero analizar
+pot_x4 = (np.abs(x4)**2)*2 
+#me queda el espectro de un solo lado porque antes se distribuia 1/2 a cada lado
+
+# paso a db
+pot_x4_db = 10*np.log10(pot_x4[:N//2, :] + 1e-12) #db
+
+ffreq = np.arange(0, N)*deltaf
+
+# %% Grafico comparativo con zoom en los maximos
+
+fig, axes = plt.subplots(2, 4, figsize=(18, 8)) 
+
+# Desempaquetamos usando .flatten() para asignar cada celda a tus variables de forma lineal
+Rec, Flat, Black, Hann, Recz, Flatz, Blackz, Hannz = axes.flatten()
+
+# Creamos el vector de frecuencias correcto para el espectro unilateral (500 puntos)
+ffreq_unilateral = np.arange(0, N//2) * deltaf
+
+# ==========================================
+# FILA 1: ESPECTRO COMPLETO (0 a fs/2)
+# ==========================================
+
+# --- Ventana Rectangular ---
+Rec.plot(ffreq_unilateral, pot_x1_db) 
+Rec.set_xlim(0, fs/2)
+Rec.set_title("Espectro Completo\nventana Rectangular")
+Rec.grid(True)
+
+# --- Ventana Flattop ---
+Flat.plot(ffreq_unilateral, pot_x2_db) 
+Flat.set_xlim(0, fs/2)
+Flat.set_title("Espectro Completo\nventana Flattop")
+Flat.grid(True)
+
+# --- Ventana Blackmanharris ---
+Black.plot(ffreq_unilateral, pot_x3_db) 
+Black.set_xlim(0, fs/2)
+Black.set_title("Espectro Completo\nventana Blackmanharris")
+Black.grid(True)
+
+# --- Ventana Hann ---
+Hann.plot(ffreq_unilateral, pot_x4_db) 
+Hann.set_xlim(0, fs/2) # CORREGIDO: Era set_xlim, no set_lim
+Hann.set_title("Espectro Completo\nventana Hann")
+Hann.grid(True)
+
+
+# ==========================================
+# FILA 2: ZOOM EN LOS MÁXIMOS
+# ==========================================
+
+# --- Ventana Rectangular (Zoom) ---
+Recz.plot(ffreq_unilateral, pot_x1_db) 
+Recz.set_xlim(N/4 * deltaf - 4*deltaf, N/4 * deltaf + 4*deltaf) 
+Recz.set_ylim(-40, 20) 
+Recz.set_title("Zoom Máximos\nventana Rectangular")
+Recz.grid(True)
+
+# --- Ventana Flattop (Zoom) ---
+Flatz.plot(ffreq_unilateral, pot_x2_db) 
+Flatz.set_xlim(N/4 * deltaf - 6*deltaf, N/4 * deltaf + 6*deltaf)
+Flatz.set_ylim(-40, 20)
+Flatz.set_title("Zoom Máximos\nventana Flattop")
+Flatz.grid(True)
+
+# --- Ventana Blackmanharris (Zoom) ---
+Blackz.plot(ffreq_unilateral, pot_x3_db) 
+Blackz.set_xlim(N/4 * deltaf - 6*deltaf, N/4 * deltaf + 6*deltaf)
+Blackz.set_ylim(-40, 20)
+Blackz.set_title("Zoom Máximos\nventana Blackmanharris")
+Blackz.grid(True)
+
+# --- Ventana Hann (Zoom) ---
+Hannz.plot(ffreq_unilateral, pot_x4_db) 
+Hannz.set_xlim(N/4 * deltaf - 6*deltaf, N/4 * deltaf + 6*deltaf)
+Hannz.set_ylim(-40, 20)
+Hannz.set_title("Zoom Máximos\nventana Hann")
+Hannz.grid(True)
+
+plt.tight_layout()
 plt.show()
-'''HASTA ACA SE QUE ESTOY ENTRE -2 Y 2'''
-
-# %%
+# %% Espectro de las ventanas 
 W1 = np.fft.fft(np.ones(N), n=N*8)
 W2 = np.fft.fft(windows.flattop(N), n=N*8)
 W3 = np.fft.fft(windows.blackmanharris(N), n=N*8)
@@ -159,7 +220,6 @@ plt.xlim(0, 200)
 plt.legend()
 plt.grid()
 plt.show()
-
 
 # %% Estimadores
 
